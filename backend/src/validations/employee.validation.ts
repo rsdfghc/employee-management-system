@@ -39,7 +39,7 @@ export const createEmployeeSchema = z.object({
 export const updateEmployeeSchema =
   createEmployeeSchema.partial();
 
-// Pagination + Search
+// Pagination + Search + Filtering
 export const employeeQuerySchema = z.object({
   page: z.coerce
     .number()
@@ -57,5 +57,14 @@ export const employeeQuerySchema = z.object({
   search: z
     .string()
     .trim()
+    .optional(),
+
+  department: z
+    .string()
+    .trim()
+    .optional(),
+
+  status: z
+    .enum(["ACTIVE", "INACTIVE"])
     .optional(),
 });

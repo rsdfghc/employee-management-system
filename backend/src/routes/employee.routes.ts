@@ -5,55 +5,83 @@ import {
   updateEmployeeSchema,
   employeeQuerySchema,
 } from "../validations/employee.validation";
+import { authenticate } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/async.middleware";
+import { authorize } from "../middleware/authorize.middleware";
 
 const router = Router();
+
+// Protect all employee routes
+router.use(authenticate);
 
 // GET all employees
 router.get(
   "/",
+  authorize("ADMIN", "HR"),
   asyncHandler(async (req, res) => {
-    const { page, limit, search } =
-      employeeQuerySchema.parse(req.query);
+    const {
+      page,
+      limit,
+      search,
+      department,
+      status,
+    } = employeeQuerySchema.parse(req.query);
 
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-          OR: [
-            {
-              firstName: {
-                contains: search,
-                mode: "insensitive" as const,
+    const where = {
+      ...(search
+        ? {
+            OR: [
+              {
+                firstName: {
+                  contains: search,
+                  mode: "insensitive" as const,
+                },
               },
-            },
-            {
-              lastName: {
-                contains: search,
-                mode: "insensitive" as const,
+              {
+                lastName: {
+                  contains: search,
+                  mode: "insensitive" as const,
+                },
               },
-            },
-            {
-              email: {
-                contains: search,
-                mode: "insensitive" as const,
+              {
+                email: {
+                  contains: search,
+                  mode: "insensitive" as const,
+                },
               },
-            },
-            {
-              position: {
-                contains: search,
-                mode: "insensitive" as const,
+              {
+                position: {
+                  contains: search,
+                  mode: "insensitive" as const,
+                },
               },
-            },
-            {
-              department: {
-                contains: search,
-                mode: "insensitive" as const,
+              {
+                department: {
+                  contains: search,
+                  mode: "insensitive" as const,
+                },
               },
+            ],
+          }
+        : {}),
+
+      ...(department
+        ? {
+            department: {
+              equals: department,
+              mode: "insensitive" as const,
             },
-          ],
-        }
-      : undefined;
+          }
+        : {}),
+
+      ...(status
+        ? {
+            status,
+          }
+        : {}),
+    };
 
     const employees = await prisma.employee.findMany({
       where,
@@ -92,7 +120,7 @@ router.get(
 
     const employee = await prisma.employee.findUnique({
       where: {
-        id: id,
+        id,
       },
     });
 
@@ -109,6 +137,7 @@ router.get(
 // CREATE employee
 router.post(
   "/",
+  authorize("ADMIN", "HR"),
   asyncHandler(async (req, res) => {
     const validatedData = createEmployeeSchema.parse(req.body);
 
@@ -123,6 +152,7 @@ router.post(
 // UPDATE employee
 router.put(
   "/:id",
+  authorize("ADMIN", "HR"),
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
 
@@ -130,7 +160,7 @@ router.put(
 
     const employee = await prisma.employee.update({
       where: {
-        id: id,
+        id,
       },
       data: validatedData,
     });
@@ -142,12 +172,13 @@ router.put(
 // DELETE employee
 router.delete(
   "/:id",
+  authorize("ADMIN"),
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
 
     const employee = await prisma.employee.delete({
       where: {
-        id: id,
+        id,
       },
     });
 
