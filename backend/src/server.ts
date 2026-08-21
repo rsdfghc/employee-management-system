@@ -1,4 +1,6 @@
 import express from "express";
+import cors from "cors";
+
 import employeeRoutes from "./routes/employee.routes";
 import authRoutes from "./routes/auth.routes";
 import { errorHandler } from "./middleware/error.middleware";
@@ -6,6 +8,13 @@ import { errorHandler } from "./middleware/error.middleware";
 const app = express();
 
 const PORT = 5000;
+
+// Allow requests from React frontend
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  })
+);
 
 app.use(express.json());
 
